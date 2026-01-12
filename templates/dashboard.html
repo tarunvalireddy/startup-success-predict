@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2 class="mb-4">Dashboard</h2>
+<p class="text-muted mb-4">
+    Predict startup success and understand model decisions using Explainable AI.
+</p>
+
+<div class="row g-4">
+
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title">Startup Success Prediction</h5>
+                <p class="card-text text-muted">
+                    Enter early-stage startup details and predict the probability of success.
+                </p>
+                <a href="{{ url_for('predict') }}" class="btn btn-primary">
+                    Go to Prediction
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title">Explainable AI (XAI)</h5>
+                <p class="card-text text-muted">
+                    Understand why the model made a specific prediction using SHAP explanations.
+                </p>
+                <a href="{{ url_for('xai') }}" class="btn btn-success">
+                    View XAI Insights
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
+

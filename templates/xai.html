@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<h3>Explainable AI</h3>
+<img src="{{ url_for('outputs', filename='shap_global_top_features.png') }}" class="img-fluid mb-4">
+<img src="{{ url_for('outputs', filename='shap_local_top_features_0.png') }}" class="img-fluid">
+
+{% endblock %}
+
