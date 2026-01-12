@@ -5,6 +5,7 @@ import shap
 import joblib
 import os
 import matplotlib.pyplot as plt
+import numpy as np
 
 # ==============================
 # CONFIG
@@ -14,6 +15,8 @@ XGB_PATH = os.path.join(MODEL_DIR, "xgboost_tuned.pkl")
 DATA_PATH = "data/processed/startups_featured.csv"
 TARGET_COLUMN = "success"
 OUTPUT_DIR = "outputs"
+TOP_N_GLOBAL = 10
+TOP_N_LOCAL = 5
 
 # ==============================
 # LOAD DATA & MODEL
@@ -25,49 +28,73 @@ def load_data_and_model():
     return X, model
 
 # ==============================
-# GLOBAL EXPLANATION
+# GLOBAL EXPLANATION (CLEAN)
 # ==============================
 def global_explanation(X, model):
-    print("📊 Generating GLOBAL feature importance...")
+    print("📊 Generating CLEAN global feature importance...")
 
     explainer = shap.TreeExplainer(model)
     shap_values = explainer.shap_values(X)
 
-    plt.figure()
-    shap.summary_plot(shap_values, X, show=False)
+    # Mean absolute SHAP values
+    mean_shap = np.abs(shap_values).mean(axis=0)
+    feature_importance = pd.DataFrame({
+        "feature": X.columns,
+        "importance": mean_shap
+    }).sort_values(by="importance", ascending=False).head(TOP_N_GLOBAL)
+
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    global_path = os.path.join(OUTPUT_DIR, "shap_global_feature_importance.png")
-    plt.savefig(global_path, bbox_inches="tight", dpi=300)
+    plt.figure(figsize=(8, 5))
+    plt.barh(
+        feature_importance["feature"][::-1],
+        feature_importance["importance"][::-1]
+    )
+    plt.title("Top Features Influencing Startup Success (Global)")
+    plt.xlabel("Mean |SHAP value|")
+    plt.tight_layout()
+
+    path = os.path.join(OUTPUT_DIR, "shap_global_top_features.png")
+    plt.savefig(path, dpi=300)
     plt.show()
 
-    print(f"💾 Saved global SHAP plot to: {global_path}")
+    print(f"💾 Saved global explanation to: {path}")
 
 # ==============================
-# LOCAL EXPLANATION
+# LOCAL EXPLANATION (CLEAN)
 # ==============================
 def local_explanation(X, model, index=0):
-    print(f"🔍 Explaining prediction for startup index: {index}")
+    print(f"🔍 Generating CLEAN local explanation for startup {index}...")
 
     explainer = shap.TreeExplainer(model)
     shap_values = explainer.shap_values(X)
 
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    local_shap = pd.DataFrame({
+        "feature": X.columns,
+        "shap_value": shap_values[index]
+    })
 
-    plt.figure()
-    shap.force_plot(
-        explainer.expected_value,
-        shap_values[index],
-        X.iloc[index],
-        matplotlib=True,
-        show=False
+    local_shap["abs"] = local_shap["shap_value"].abs()
+    top_local = local_shap.sort_values("abs", ascending=False).head(TOP_N_LOCAL)
+
+    plt.figure(figsize=(8, 4))
+    colors = ["green" if v > 0 else "red" for v in top_local["shap_value"]]
+
+    plt.barh(
+        top_local["feature"][::-1],
+        top_local["shap_value"][::-1],
+        color=colors[::-1]
     )
 
-    local_path = os.path.join(OUTPUT_DIR, f"shap_local_explanation_{index}.png")
-    plt.savefig(local_path, bbox_inches="tight", dpi=300)
+    plt.title("Top Local Factors for This Startup")
+    plt.xlabel("SHAP Contribution")
+    plt.tight_layout()
+
+    path = os.path.join(OUTPUT_DIR, f"shap_local_top_features_{index}.png")
+    plt.savefig(path, dpi=300)
     plt.show()
 
-    print(f"💾 Saved local SHAP plot to: {local_path}")
+    print(f"💾 Saved local explanation to: {path}")
 
 # ==============================
 # MAIN
@@ -78,7 +105,7 @@ def main():
     global_explanation(X, model)
     local_explanation(X, model, index=0)
 
-    print("\n✅ Explainable AI (XAI) completed successfully")
+    print("\n✅ Clean, stakeholder-friendly XAI generated")
 
 if __name__ == "__main__":
     main()
